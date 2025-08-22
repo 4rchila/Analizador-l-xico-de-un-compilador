@@ -1,0 +1,28 @@
+ProyectoAnalizadorLexico/
+│── ProyectoAnalizadorLexico.sln          # Solución principal de Visual Studio
+│
+├── AnalizadorLexico/                     # Proyecto principal (App con GUI)
+│   │── AnalizadorLexico.csproj
+│   │
+│   ├── Program.cs                        # Punto de entrada
+│   ├── MainForm.cs                       # Ventana principal (GUI)
+│   ├── MainForm.Designer.cs              # Diseño de la interfaz
+│   ├── MainForm.resx                     # Recursos de la GUI
+│   │
+│   ├── Lexico/                           # Carpeta para el motor del analizador
+│   │   ├── Analizador.cs                 # Clase principal del analizador léxico
+│   │   ├── Token.cs                      # Clase que representa un Token
+│   │   ├── TokenType.cs                  # Enumeración de tipos de tokens
+│   │   └── LenguajeDefinido.cs           # Reglas del lenguaje (palabras reservadas, regex, etc.)
+│   │
+│   ├── Utils/                            # Herramientas auxiliares
+│   │   └── ArchivoManager.cs             # Manejo de lectura de archivos .txt
+│   │
+│   └── Properties/                       # Configuración del proyecto
+│       ├── AssemblyInfo.cs
+│       └── Resources.resx
+│
+├── ManualUsuario/                        # Documentación
+│   └── borrador.md                       # Primer borrador del manual
+│
+└── README.md                             # Instrucciones generales del proyecto
