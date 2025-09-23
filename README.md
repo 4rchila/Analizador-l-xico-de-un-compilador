@@ -9,7 +9,6 @@ La aplicación permite identificar **tokens** y **palabras reservadas**, y adem�
 - Comprender el proceso de análisis léxico realizado por un compilador.  
 
 ## 🖼️ Captura de pantalla
-*(Aquí puedes añadir una imagen de la interfaz de tu programa)*  
 ![Captura de pantalla](https://i.imgur.com/jFnoq28.png)
 
 ## ⚙️ Requisitos del sistema
