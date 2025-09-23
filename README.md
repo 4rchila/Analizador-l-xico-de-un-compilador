@@ -18,5 +18,3 @@ La aplicación permite identificar **tokens** y **palabras reservadas**, y adem�
 
 ## 🚀 Instalación y ejecución
 1. Clonar este repositorio o descargar el código fuente.  
-   ```bash
-   git clone https://github.com/usuario/analizador-lexico.git
