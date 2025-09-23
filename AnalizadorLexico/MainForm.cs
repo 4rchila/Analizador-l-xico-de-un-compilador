@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Text.RegularExpressions;
+using AnalizadorLexico.Lexico; // Usamos la lógica externa
 
 namespace AnalizadorLexico
 {
@@ -26,30 +24,32 @@ namespace AnalizadorLexico
 
         private void ConfigurarInterfaz()
         {
-            // Configurar el DataGridView
+            // Si tu diseñador ya agrega columnas, esto puede omitirse.
+            // Lo dejo por si quieres que el DataGridView tenga columnas fijas.
             dgvResultados.AutoGenerateColumns = false;
-            dgvResultados.Columns.Add("Token", "TOKEN");
-            dgvResultados.Columns.Add("Tipo", "TIPO");
-            dgvResultados.Columns.Add("Cantidad", "CANTIDAD");
-            
-            dgvResultados.Columns[0].Width = 150;
-            dgvResultados.Columns[1].Width = 150;
-            dgvResultados.Columns[2].Width = 100;
 
-            // Configurar colores y estilos
+            if (dgvResultados.Columns.Count == 0)
+            {
+                dgvResultados.Columns.Add("Token", "TOKEN");
+                dgvResultados.Columns.Add("Tipo", "TIPO");
+                dgvResultados.Columns.Add("Cantidad", "CANTIDAD");
+                dgvResultados.Columns[0].Width = 150;
+                dgvResultados.Columns[1].Width = 150;
+                dgvResultados.Columns[2].Width = 100;
+            }
+
             dgvResultados.BackgroundColor = Color.White;
             dgvResultados.GridColor = Color.LightGray;
             dgvResultados.DefaultCellStyle.SelectionBackColor = Color.LightBlue;
-            
+
             txtContenido.ReadOnly = true;
             txtContenido.BackColor = Color.White;
             txtContenido.Font = new Font("Consolas", 10);
-            
+
             txtResultados.ReadOnly = true;
             txtResultados.BackColor = Color.White;
             txtResultados.Font = new Font("Consolas", 9);
 
-            // Configurar labels
             lblArchivo.Text = "Ningún archivo seleccionado";
             lblArchivo.ForeColor = Color.Gray;
         }
@@ -66,7 +66,7 @@ namespace AnalizadorLexico
                     archivoSeleccionado = openFileDialog.FileName;
                     lblArchivo.Text = Path.GetFileName(archivoSeleccionado);
                     lblArchivo.ForeColor = Color.Black;
-                    
+
                     CargarContenidoArchivo();
                     btnAnalizar.Enabled = true;
                 }
@@ -78,21 +78,21 @@ namespace AnalizadorLexico
             try
             {
                 string contenido = File.ReadAllText(archivoSeleccionado, Encoding.UTF8);
-                
+
                 // Agregar números de línea
                 string[] lineas = contenido.Split('\n');
                 StringBuilder contenidoConLineas = new StringBuilder();
-                
+
                 for (int i = 0; i < lineas.Length; i++)
                 {
                     contenidoConLineas.AppendLine($"{i + 1:D3}: {lineas[i]}");
                 }
-                
+
                 txtContenido.Text = contenidoConLineas.ToString();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar el archivo: {ex.Message}", "Error", 
+                MessageBox.Show($"Error al cargar el archivo: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -101,7 +101,7 @@ namespace AnalizadorLexico
         {
             if (string.IsNullOrEmpty(archivoSeleccionado))
             {
-                MessageBox.Show("Por favor selecciona un archivo primero.", "Advertencia", 
+                MessageBox.Show("Por favor selecciona un archivo primero.", "Advertencia",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -118,178 +118,56 @@ namespace AnalizadorLexico
 
             try
             {
-                // <CHANGE> Implementar análisis léxico real usando LenguajeDefinido
                 RealizarAnalisisLexico();
-                
                 MostrarResultados();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error durante el análisis: {ex.Message}", "Error", 
+                MessageBox.Show($"Error durante el análisis: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        // <CHANGE> Nueva implementación del análisis léxico usando tu LenguajeDefinido
+        // Ahora usamos directamente la clase Analizador que ya tienes
         private void RealizarAnalisisLexico()
         {
-            string contenido = File.ReadAllText(archivoSeleccionado);
-            string[] lineas = contenido.Split('\n');
-            
+            string contenido = File.ReadAllText(archivoSeleccionado, Encoding.UTF8);
+
+            Analizador analizador = new Analizador();
+            List<Token> tokens = analizador.Analizar(contenido);
+
             StringBuilder log = new StringBuilder();
             log.AppendLine("=== INICIANDO ANÁLISIS LÉXICO ===\r\n");
-            
+
             Dictionary<string, int> contadorTokens = new Dictionary<string, int>();
-            
-            for (int numeroLinea = 0; numeroLinea < lineas.Length; numeroLinea++)
+
+            foreach (var token in tokens)
             {
-                string linea = lineas[numeroLinea].Trim();
-                if (string.IsNullOrEmpty(linea)) continue;
-                
-                log.AppendLine($"Línea {numeroLinea + 1}: {linea}");
-                
-                // Tokenizar la línea
-                List<string> tokens = TokenizarLinea(linea);
-                
-                foreach (string token in tokens)
+                log.AppendLine($"Línea {token.Linea}, Col {token.Columna}: '{token.Lexema}' -> {token.Tipo}");
+
+                // Contar tokens por lexema+tipo
+                string clave = $"{token.Lexema}|{token.Tipo}";
+                if (contadorTokens.ContainsKey(clave)) contadorTokens[clave]++;
+                else contadorTokens[clave] = 1;
+
+                // Registrar errores
+                if (token.Tipo == TokenType.Error)
                 {
-                    if (string.IsNullOrWhiteSpace(token)) continue;
-                    
-                    string tipoToken = ClasificarToken(token);
-                    
-                    if (tipoToken == "ERROR_LEXICO")
-                    {
-                        erroresEncontrados.Add(new ErrorLexico(token, numeroLinea + 1));
-                        log.AppendLine($"  ❌ ERROR: '{token}' no pertenece al lenguaje");
-                    }
-                    else
-                    {
-                        log.AppendLine($"  ✓ '{token}' -> {tipoToken}");
-                        
-                        // Contar tokens
-                        string clave = $"{token}|{tipoToken}";
-                        if (contadorTokens.ContainsKey(clave))
-                            contadorTokens[clave]++;
-                        else
-                            contadorTokens[clave] = 1;
-                    }
+                    erroresEncontrados.Add(new ErrorLexico(token.Lexema, token.Linea));
                 }
-                
-                log.AppendLine();
             }
-            
+
             // Convertir contador a lista de resultados
             foreach (var kvp in contadorTokens)
             {
                 string[] partes = kvp.Key.Split('|');
-                tokensEncontrados.Add(new TokenResult(partes[0], partes[1], kvp.Value));
+                string lexema = partes[0];
+                string tipo = partes.Length > 1 ? partes[1] : "Desconocido";
+                tokensEncontrados.Add(new TokenResult(lexema, tipo, kvp.Value));
             }
-            
-            log.AppendLine("=== ANÁLISIS COMPLETADO ===");
+
+            log.AppendLine("\r\n=== ANÁLISIS COMPLETADO ===");
             txtResultados.Text = log.ToString();
-        }
-
-        // <CHANGE> Método para tokenizar una línea separando por espacios y operadores
-        private List<string> TokenizarLinea(string linea)
-        {
-            List<string> tokens = new List<string>();
-            StringBuilder tokenActual = new StringBuilder();
-            
-            for (int i = 0; i < linea.Length; i++)
-            {
-                char caracter = linea[i];
-                
-                // Si es un espacio, agregar token actual si existe
-                if (char.IsWhiteSpace(caracter))
-                {
-                    if (tokenActual.Length > 0)
-                    {
-                        tokens.Add(tokenActual.ToString());
-                        tokenActual.Clear();
-                    }
-                }
-                // Si es un operador de un solo carácter
-                else if (EsOperadorSimple(caracter.ToString()))
-                {
-                    // Agregar token actual si existe
-                    if (tokenActual.Length > 0)
-                    {
-                        tokens.Add(tokenActual.ToString());
-                        tokenActual.Clear();
-                    }
-                    
-                    // Verificar operadores de dos caracteres
-                    if (i + 1 < linea.Length)
-                    {
-                        string operadorDoble = caracter.ToString() + linea[i + 1].ToString();
-                        if (LenguajeDefinido.Operador.Contains(operadorDoble))
-                        {
-                            tokens.Add(operadorDoble);
-                            i++; // Saltar el siguiente carácter
-                            continue;
-                        }
-                    }
-                    
-                    // Agregar operador simple
-                    tokens.Add(caracter.ToString());
-                }
-                else
-                {
-                    // Agregar carácter al token actual
-                    tokenActual.Append(caracter);
-                }
-            }
-            
-            // Agregar último token si existe
-            if (tokenActual.Length > 0)
-            {
-                tokens.Add(tokenActual.ToString());
-            }
-            
-            return tokens;
-        }
-
-        // <CHANGE> Verificar si es un operador simple
-        private bool EsOperadorSimple(string caracter)
-        {
-            return LenguajeDefinido.Operador.Contains(caracter);
-        }
-
-        // <CHANGE> Clasificar token usando tu LenguajeDefinido
-        private string ClasificarToken(string token)
-        {
-            // Verificar palabras reservadas
-            if (LenguajeDefinido.PalabrasReservadas.Contains(token))
-            {
-                return "Palabra Reservada";
-            }
-            
-            // Verificar operadores
-            if (LenguajeDefinido.Operador.Contains(token))
-            {
-                return "Operador";
-            }
-            
-            // Verificar números decimales (debe ir antes que enteros)
-            if (LenguajeDefinido.NumeroDecimal.IsMatch(token))
-            {
-                return "Numero Decimal";
-            }
-            
-            // Verificar números enteros
-            if (LenguajeDefinido.NumeroEntero.IsMatch(token))
-            {
-                return "Numero Entero";
-            }
-            
-            // Verificar identificadores
-            if (LenguajeDefinido.Identificador.IsMatch(token))
-            {
-                return "Identificador";
-            }
-            
-            // Si no coincide con ningún patrón, es un error léxico
-            return "ERROR_LEXICO";
         }
 
         private void MostrarResultados()
@@ -304,11 +182,11 @@ namespace AnalizadorLexico
                     errores.AppendLine($"Línea {error.NumeroLinea}: Token '{error.Token}' no reconocido");
                 }
                 txtResultados.Text += errores.ToString();
-                
-                MessageBox.Show($"Se encontraron {erroresEncontrados.Count} errores léxicos. Revisa el log para más detalles.", 
+
+                MessageBox.Show($"Se encontraron {erroresEncontrados.Count} errores léxicos. Revisa el log para más detalles.",
                     "Errores Encontrados", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            
+
             // Mostrar tokens en DataGridView
             foreach (var token in tokensEncontrados.OrderBy(t => t.Tipo).ThenBy(t => t.Token))
             {
@@ -321,7 +199,7 @@ namespace AnalizadorLexico
             resumen.AppendLine($"Total de tokens únicos encontrados: {tokensEncontrados.Count}");
             resumen.AppendLine($"Total de tokens procesados: {tokensEncontrados.Sum(t => t.Cantidad)}");
             resumen.AppendLine($"Errores léxicos: {erroresEncontrados.Count}");
-            
+
             var tiposAgrupados = tokensEncontrados.GroupBy(t => t.Tipo);
             foreach (var grupo in tiposAgrupados)
             {
@@ -333,12 +211,10 @@ namespace AnalizadorLexico
             // Mostrar mensaje de resultado
             if (erroresEncontrados.Count == 0)
             {
-                MessageBox.Show("Análisis completado exitosamente sin errores.", "Análisis Exitoso", 
+                MessageBox.Show("Análisis completado exitosamente sin errores.", "Análisis Exitoso",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-
-        // ... existing code ... (métodos btnLimpiar_Click, btnExportar_Click, ExportarResultados permanecen igual)
 
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
@@ -357,7 +233,7 @@ namespace AnalizadorLexico
         {
             if (tokensEncontrados.Count == 0)
             {
-                MessageBox.Show("No hay resultados para exportar.", "Advertencia", 
+                MessageBox.Show("No hay resultados para exportar.", "Advertencia",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -373,12 +249,12 @@ namespace AnalizadorLexico
                     try
                     {
                         ExportarResultados(saveFileDialog.FileName);
-                        MessageBox.Show("Resultados exportados exitosamente.", "Información", 
+                        MessageBox.Show("Resultados exportados exitosamente.", "Información",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error al exportar: {ex.Message}", "Error", 
+                        MessageBox.Show($"Error al exportar: {ex.Message}", "Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -389,28 +265,29 @@ namespace AnalizadorLexico
         {
             StringBuilder csv = new StringBuilder();
             csv.AppendLine("TOKEN,TIPO,CANTIDAD");
-            
+
             foreach (var token in tokensEncontrados)
             {
                 csv.AppendLine($"{token.Token},{token.Tipo},{token.Cantidad}");
             }
-            
+
             // Agregar errores si existen
             if (erroresEncontrados.Count > 0)
             {
-                csv.AppendLine("\nERRORES LÉXICOS:");
+                csv.AppendLine();
+                csv.AppendLine("ERRORES LÉXICOS:");
                 csv.AppendLine("TOKEN,LÍNEA");
                 foreach (var error in erroresEncontrados)
                 {
                     csv.AppendLine($"{error.Token},{error.NumeroLinea}");
                 }
             }
-            
+
             File.WriteAllText(archivo, csv.ToString(), Encoding.UTF8);
         }
     }
 
-    // Clase auxiliar para almacenar resultados
+    // Clases auxiliares para la GUI
     public class TokenResult
     {
         public string Token { get; set; }
@@ -425,7 +302,6 @@ namespace AnalizadorLexico
         }
     }
 
-    // <CHANGE> Nueva clase para manejar errores léxicos
     public class ErrorLexico
     {
         public string Token { get; set; }
@@ -437,27 +313,5 @@ namespace AnalizadorLexico
             NumeroLinea = numeroLinea;
         }
     }
-
-    // <CHANGE> Agregar la clase LenguajeDefinido directamente en el proyecto
-    public static class LenguajeDefinido
-    {
-        public static readonly List<string> PalabrasReservadas = new List<string>()
-        {
-            "entero", "decimal", "booleano", "cadena", "si", "sino", "mientras", "hacer",
-            "verdadero", "falso", "o", "y", "nulo", "romper", "devolver", "intentar",
-            "atrapar", "imprimir", "entrada", "para", "en", "importar", "publico",
-            "privado", "clase", "estatica", "privada", "protegida", "nuevo", "caracter",
-            "continuar", "esto"
-        };
-
-        public static readonly List<string> Operador = new List<string>()
-        {
-            "+", "-", "*", "/", "%", "=", "==", "!=", "<", ">", "<=", ">=",
-            "(", ")", "{", "}", "'", ":", ";"
-        };
-
-        public static readonly Regex NumeroEntero = new Regex(@"^\d+$");
-        public static readonly Regex NumeroDecimal = new Regex(@"^\d+\.\d+$");
-        public static readonly Regex Identificador = new Regex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-    }
 }
+
