@@ -40,7 +40,6 @@ namespace AnalizadorLexico.Lexico
             {
                 char c = linea[i];
 
-                // Manejo de cadenas
                 if (c == '"' && !enCaracter)
                 {
                     actual += c;
@@ -57,7 +56,6 @@ namespace AnalizadorLexico.Lexico
                     continue;
                 }
 
-                // Manejo de caracteres
                 if (c == '\'' && !enCadena)
                 {
                     actual += c;
@@ -80,7 +78,6 @@ namespace AnalizadorLexico.Lexico
                     continue;
                 }
 
-                // Espacios
                 if (char.IsWhiteSpace(c))
                 {
                     if (!string.IsNullOrEmpty(actual))
@@ -91,7 +88,6 @@ namespace AnalizadorLexico.Lexico
                     continue;
                 }
 
-                // Operadores de 2 caracteres
                 if (i + 1 < linea.Length && LenguajeDefinido.Operadores.Contains(c.ToString() + linea[i + 1]))
                 {
                     if (!string.IsNullOrEmpty(actual))
@@ -104,7 +100,6 @@ namespace AnalizadorLexico.Lexico
                     continue;
                 }
 
-                // Operadores de 1 caracter
                 if (LenguajeDefinido.Operadores.Contains(c.ToString()) || LenguajeDefinido.Signos.Contains(c.ToString()))
                 {
                     if (!string.IsNullOrEmpty(actual))
@@ -116,7 +111,6 @@ namespace AnalizadorLexico.Lexico
                     continue;
                 }
 
-                // Acumular identificadores y números
                 actual += c;
             }
 
@@ -149,7 +143,7 @@ namespace AnalizadorLexico.Lexico
                 return TokenType.Caracter;
 
             if (LenguajeDefinido.Booleano.IsMatch(token))
-                return TokenType.Entero; // o TokenType.Booleano si lo agregas
+                return TokenType.Entero;
 
             if (LenguajeDefinido.Identificador.IsMatch(token))
                 return TokenType.Identificador;
