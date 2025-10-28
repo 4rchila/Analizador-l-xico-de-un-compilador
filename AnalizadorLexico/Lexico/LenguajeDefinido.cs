@@ -17,7 +17,17 @@ namespace AnalizadorLexico.Lexico
             "intentar", "atrapar",
             "imprimir", "entrada",
             "clase", "nuevo", "publico", "privado", "protegida", "estatica", "esto",
-            "o", "y"
+            "o", "y",
+
+            // Versiones con mayúscula inicial
+            "Entero", "Decimal", "Booleano", "Cadena", "Caracter",
+            "Verdadero", "Falso", "Nulo",
+            "Si", "Sino", "Mientras", "Hacer", "Para", "Romper", "Continuar",
+            "Funcion", "Devolver",
+            "Intentar", "Atrapar",
+            "Imprimir", "Entrada",
+            "Clase", "Nuevo", "Publico", "Privado", "Protegida", "Estatica", "Esto",
+            "O", "Y"
         };
 
         // =============================

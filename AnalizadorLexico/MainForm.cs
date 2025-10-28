@@ -6,7 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using AnalizadorLexico.Lexico; // Usamos la lógica externa
+using AnalizadorLexico.Lexico;
+using AnalizadorLexico.Semantico;
 
 namespace AnalizadorLexico
 {
@@ -15,6 +16,7 @@ namespace AnalizadorLexico
         private string archivoSeleccionado = "";
         private List<TokenResult> tokensEncontrados = new List<TokenResult>();
         private List<ErrorLexico> erroresEncontrados = new List<ErrorLexico>();
+        private List<string> erroresSemanticos = new List<string>();
 
         public MainForm()
         {
@@ -24,8 +26,6 @@ namespace AnalizadorLexico
 
         private void ConfigurarInterfaz()
         {
-            // Si tu diseñador ya agrega columnas, esto puede omitirse.
-            // Lo dejo por si quieres que el DataGridView tenga columnas fijas.
             dgvResultados.AutoGenerateColumns = false;
 
             if (dgvResultados.Columns.Count == 0)
@@ -79,7 +79,6 @@ namespace AnalizadorLexico
             {
                 string contenido = File.ReadAllText(archivoSeleccionado, Encoding.UTF8);
 
-                // Agregar números de línea
                 string[] lineas = contenido.Split('\n');
                 StringBuilder contenidoConLineas = new StringBuilder();
 
@@ -106,13 +105,12 @@ namespace AnalizadorLexico
                 return;
             }
 
-            // Limpiar resultados anteriores
             dgvResultados.Rows.Clear();
             txtResultados.Clear();
             tokensEncontrados.Clear();
             erroresEncontrados.Clear();
+            erroresSemanticos.Clear();
 
-            // Mostrar mensaje de procesamiento
             txtResultados.Text = "Analizando archivo...\r\n";
             Application.DoEvents();
 
@@ -128,7 +126,6 @@ namespace AnalizadorLexico
             }
         }
 
-        // Ahora usamos directamente la clase Analizador que ya tienes
         private void RealizarAnalisisLexico()
         {
             string contenido = File.ReadAllText(archivoSeleccionado, Encoding.UTF8);
@@ -145,19 +142,16 @@ namespace AnalizadorLexico
             {
                 log.AppendLine($"Línea {token.Linea}, Col {token.Columna}: '{token.Lexema}' -> {token.Tipo}");
 
-                // Contar tokens por lexema+tipo
                 string clave = $"{token.Lexema}|{token.Tipo}";
                 if (contadorTokens.ContainsKey(clave)) contadorTokens[clave]++;
                 else contadorTokens[clave] = 1;
 
-                // Registrar errores
                 if (token.Tipo == TokenType.Error)
                 {
                     erroresEncontrados.Add(new ErrorLexico(token.Lexema, token.Linea));
                 }
             }
 
-            // Convertir contador a lista de resultados
             foreach (var kvp in contadorTokens)
             {
                 string[] partes = kvp.Key.Split('|');
@@ -166,13 +160,51 @@ namespace AnalizadorLexico
                 tokensEncontrados.Add(new TokenResult(lexema, tipo, kvp.Value));
             }
 
-            log.AppendLine("\r\n=== ANÁLISIS COMPLETADO ===");
+            log.AppendLine("\r\n=== ANÁLISIS LÉXICO COMPLETADO ===");
+            
+            if (erroresEncontrados.Count == 0)
+            {
+                log.AppendLine("\r\n=== INICIANDO ANÁLISIS SEMÁNTICO ===");
+                RealizarAnalisisSemantico(tokens, log);
+            }
+
             txtResultados.Text = log.ToString();
+        }
+
+        private void RealizarAnalisisSemantico(List<Token> tokens, StringBuilder log)
+        {
+            try
+            {
+                var analizadorSemantico = new AnalizadorSemantico(tokens);
+                analizadorSemantico.Analizar();
+
+                foreach (var error in analizadorSemantico.Errores)
+                {
+                    erroresSemanticos.Add(error);
+                }
+
+                if (analizadorSemantico.Errores.Count == 0)
+                {
+                    log.AppendLine("✅ Análisis semántico completado sin errores.");
+                }
+                else
+                {
+                    log.AppendLine($"❌ Se encontraron {analizadorSemantico.Errores.Count} errores semánticos:");
+                    foreach (var error in analizadorSemantico.Errores)
+                    {
+                        log.AppendLine($"   - {error}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.AppendLine($"⚠️ Error durante análisis semántico: {ex.Message}");
+                erroresSemanticos.Add($"Error en análisis semántico: {ex.Message}");
+            }
         }
 
         private void MostrarResultados()
         {
-            // Mostrar errores si existen
             if (erroresEncontrados.Count > 0)
             {
                 StringBuilder errores = new StringBuilder();
@@ -183,22 +215,43 @@ namespace AnalizadorLexico
                 }
                 txtResultados.Text += errores.ToString();
 
-                MessageBox.Show($"Se encontraron {erroresEncontrados.Count} errores léxicos. Revisa el log para más detalles.",
+                MessageBox.Show($"Se encontraron {erroresEncontrados.Count} errores léxicos.",
                     "Errores Encontrados", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            // Mostrar tokens en DataGridView
+            if (erroresSemanticos.Count > 0)
+            {
+                StringBuilder erroresSem = new StringBuilder();
+                erroresSem.AppendLine("\r\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+                foreach (var error in erroresSemanticos)
+                {
+                    erroresSem.AppendLine(error);
+                }
+                txtResultados.Text += erroresSem.ToString();
+
+                if (erroresEncontrados.Count > 0)
+                {
+                    MessageBox.Show($"Se encontraron {erroresEncontrados.Count} errores léxicos y {erroresSemanticos.Count} errores semánticos.",
+                        "Errores Encontrados", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show($"Se encontraron {erroresSemanticos.Count} errores semánticos.",
+                        "Errores Semánticos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+
             foreach (var token in tokensEncontrados.OrderBy(t => t.Tipo).ThenBy(t => t.Token))
             {
                 dgvResultados.Rows.Add(token.Token, token.Tipo, token.Cantidad);
             }
 
-            // Mostrar resumen
             StringBuilder resumen = new StringBuilder();
             resumen.AppendLine($"\r\n=== RESUMEN DEL ANÁLISIS ===");
             resumen.AppendLine($"Total de tokens únicos encontrados: {tokensEncontrados.Count}");
             resumen.AppendLine($"Total de tokens procesados: {tokensEncontrados.Sum(t => t.Cantidad)}");
             resumen.AppendLine($"Errores léxicos: {erroresEncontrados.Count}");
+            resumen.AppendLine($"Errores semánticos: {erroresSemanticos.Count}");
 
             var tiposAgrupados = tokensEncontrados.GroupBy(t => t.Tipo);
             foreach (var grupo in tiposAgrupados)
@@ -208,8 +261,7 @@ namespace AnalizadorLexico
 
             txtResultados.Text += resumen.ToString();
 
-            // Mostrar mensaje de resultado
-            if (erroresEncontrados.Count == 0)
+            if (erroresEncontrados.Count == 0 && erroresSemanticos.Count == 0)
             {
                 MessageBox.Show("Análisis completado exitosamente sin errores.", "Análisis Exitoso",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -227,6 +279,7 @@ namespace AnalizadorLexico
             btnAnalizar.Enabled = false;
             tokensEncontrados.Clear();
             erroresEncontrados.Clear();
+            erroresSemanticos.Clear();
         }
 
         private void btnExportar_Click(object sender, EventArgs e)
@@ -271,7 +324,6 @@ namespace AnalizadorLexico
                 csv.AppendLine($"{token.Token},{token.Tipo},{token.Cantidad}");
             }
 
-            // Agregar errores si existen
             if (erroresEncontrados.Count > 0)
             {
                 csv.AppendLine();
@@ -283,11 +335,22 @@ namespace AnalizadorLexico
                 }
             }
 
+            if (erroresSemanticos.Count > 0)
+            {
+                csv.AppendLine();
+                csv.AppendLine("ERRORES SEMÁNTICOS:");
+                csv.AppendLine("MENSAJE");
+                foreach (var error in erroresSemanticos)
+                {
+                    string mensaje = error.Replace("\"", "\"\"");
+                    csv.AppendLine($"\"{mensaje}\"");
+                }
+            }
+
             File.WriteAllText(archivo, csv.ToString(), Encoding.UTF8);
         }
     }
 
-    // Clases auxiliares para la GUI
     public class TokenResult
     {
         public string Token { get; set; }
@@ -314,4 +377,3 @@ namespace AnalizadorLexico
         }
     }
 }
-

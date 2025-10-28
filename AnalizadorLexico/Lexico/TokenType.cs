@@ -9,5 +9,7 @@ public enum TokenType
     Signo,
     Cadena,
     Caracter,
-    Error
+    Error,
+    OperadorAsignacion,
+    Booleano
 }

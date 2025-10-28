@@ -40,6 +40,19 @@ namespace AnalizadorLexico.Lexico
             {
                 char c = linea[i];
 
+                // Detectar operadores de asignación ('=')
+                if (c == '=' && !enCadena && !enCaracter)
+                { 
+                    if (!string.IsNullOrEmpty(actual))
+                    {
+                        resultado.Add(actual);
+                        actual = "";
+                    }
+                    resultado.Add(c.ToString());
+                    continue;
+                }
+
+
                 if (c == '"' && !enCaracter)
                 {
                     actual += c;
@@ -127,6 +140,9 @@ namespace AnalizadorLexico.Lexico
             if (LenguajeDefinido.PalabrasReservadas.Contains(token))
                 return TokenType.PalabraReservada;
 
+            if (token == "=")
+                return TokenType.OperadorAsignacion;
+
             if (LenguajeDefinido.Operadores.Contains(token))
                 return TokenType.Operador;
 
@@ -143,7 +159,7 @@ namespace AnalizadorLexico.Lexico
                 return TokenType.Caracter;
 
             if (LenguajeDefinido.Booleano.IsMatch(token))
-                return TokenType.Entero;
+                return TokenType.Booleano;
 
             if (LenguajeDefinido.Identificador.IsMatch(token))
                 return TokenType.Identificador;
