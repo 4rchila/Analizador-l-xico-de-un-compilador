@@ -17,8 +17,6 @@ namespace AnalizadorLexico
         private List<TokenResult> tokensEncontrados = new List<TokenResult>();
         private List<ErrorLexico> erroresEncontrados = new List<ErrorLexico>();
         private List<string> erroresSemanticos = new List<string>();
-        private List<string> erroresSintacticos = new List<string>();
-
 
         public MainForm()
         {
@@ -112,8 +110,6 @@ namespace AnalizadorLexico
             tokensEncontrados.Clear();
             erroresEncontrados.Clear();
             erroresSemanticos.Clear();
-            erroresSintacticos.Clear();
-
 
             txtResultados.Text = "Analizando archivo...\r\n";
             Application.DoEvents();
@@ -168,11 +164,8 @@ namespace AnalizadorLexico
             
             if (erroresEncontrados.Count == 0)
             {
-                log.AppendLine("\r\n=== INICIANDO ANÁLISIS SINTÁCTICO ===");
-                RealizarAnalisisSintatico(tokens, log);
                 log.AppendLine("\r\n=== INICIANDO ANÁLISIS SEMÁNTICO ===");
                 RealizarAnalisisSemantico(tokens, log);
-
             }
 
             txtResultados.Text = log.ToString();
@@ -192,11 +185,11 @@ namespace AnalizadorLexico
 
                 if (analizadorSemantico.Errores.Count == 0)
                 {
-                    log.AppendLine("Análisis semántico completado sin errores.");
+                    log.AppendLine("✅ Análisis semántico completado sin errores.");
                 }
                 else
                 {
-                    log.AppendLine($"Se encontraron {analizadorSemantico.Errores.Count} errores semánticos:");
+                    log.AppendLine($"❌ Se encontraron {analizadorSemantico.Errores.Count} errores semánticos:");
                     foreach (var error in analizadorSemantico.Errores)
                     {
                         log.AppendLine($"   - {error}");
@@ -209,35 +202,6 @@ namespace AnalizadorLexico
                 erroresSemanticos.Add($"Error en análisis semántico: {ex.Message}");
             }
         }
-
-        private void RealizarAnalisisSintatico(List<Token> tokens, StringBuilder log)
-        {
-            try
-            {
-                var parser = new AnalizadorLexico.Sintactico.AnalizadorSintactico.Parser(tokens);
-                bool exito = parser.ParseProgram();
-
-                if (parser.Errores.Count == 0)
-                {
-                    log.AppendLine("Análisis sintáctico completado sin errores.");
-                }
-                else
-                {
-                    log.AppendLine($"Se encontraron {parser.Errores.Count} errores sintácticos:");
-                    foreach (var error in parser.Errores)
-                    {
-                        erroresSintacticos.Add(error);
-                        log.AppendLine($"   - {error}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                log.AppendLine($"⚠️ Error durante el análisis sintáctico: {ex.Message}");
-                erroresSintacticos.Add($"Error interno en análisis sintáctico: {ex.Message}");
-            }
-        }
-
 
         private void MostrarResultados()
         {
@@ -276,22 +240,7 @@ namespace AnalizadorLexico
                         "Errores Semánticos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
-            //mostrar errores sintacticos
-            if (erroresSintacticos.Count > 0)
-            {
-                StringBuilder erroresSin = new StringBuilder();
-                erroresSin.AppendLine("\r\n=== ERRORES SINTÁCTICOS ENCONTRADOS ===");
-                foreach (var error in erroresSintacticos)
-                {
-                    erroresSin.AppendLine(error);
-                }
-                txtResultados.Text += erroresSin.ToString();
 
-                MessageBox.Show($"Se encontraron {erroresSintacticos.Count} errores sintácticos.",
-                    "Errores Sintácticos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-
-          
             foreach (var token in tokensEncontrados.OrderBy(t => t.Tipo).ThenBy(t => t.Token))
             {
                 dgvResultados.Rows.Add(token.Token, token.Tipo, token.Cantidad);
@@ -303,7 +252,6 @@ namespace AnalizadorLexico
             resumen.AppendLine($"Total de tokens procesados: {tokensEncontrados.Sum(t => t.Cantidad)}");
             resumen.AppendLine($"Errores léxicos: {erroresEncontrados.Count}");
             resumen.AppendLine($"Errores semánticos: {erroresSemanticos.Count}");
-            resumen.AppendLine($"Errores sintácticos: {erroresSintacticos.Count}");
 
             var tiposAgrupados = tokensEncontrados.GroupBy(t => t.Tipo);
             foreach (var grupo in tiposAgrupados)
@@ -313,7 +261,7 @@ namespace AnalizadorLexico
 
             txtResultados.Text += resumen.ToString();
 
-            if (erroresEncontrados.Count == 0 && erroresSemanticos.Count == 0 && erroresSintacticos.Count == 0)
+            if (erroresEncontrados.Count == 0 && erroresSemanticos.Count == 0)
             {
                 MessageBox.Show("Análisis completado exitosamente sin errores.", "Análisis Exitoso",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -332,7 +280,6 @@ namespace AnalizadorLexico
             tokensEncontrados.Clear();
             erroresEncontrados.Clear();
             erroresSemanticos.Clear();
-            erroresSintacticos.Clear();
         }
 
         private void btnExportar_Click(object sender, EventArgs e)
@@ -394,17 +341,6 @@ namespace AnalizadorLexico
                 csv.AppendLine("ERRORES SEMÁNTICOS:");
                 csv.AppendLine("MENSAJE");
                 foreach (var error in erroresSemanticos)
-                {
-                    string mensaje = error.Replace("\"", "\"\"");
-                    csv.AppendLine($"\"{mensaje}\"");
-                }
-            }
-            if (erroresSintacticos.Count > 0)
-            {
-                csv.AppendLine();
-                csv.AppendLine("ERRORES SINTÁCTICOS:");
-                csv.AppendLine("MENSAJE");
-                foreach (var error in erroresSintacticos)
                 {
                     string mensaje = error.Replace("\"", "\"\"");
                     csv.AppendLine($"\"{mensaje}\"");

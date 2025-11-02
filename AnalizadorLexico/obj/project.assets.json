@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador\\AnalizadorLexico\\AnalizadorLexico.csproj",
+      "projectUniqueName": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador3\\AnalizadorLexico\\AnalizadorLexico.csproj",
       "projectName": "AnalizadorLexico",
-      "projectPath": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador\\AnalizadorLexico\\AnalizadorLexico.csproj",
+      "projectPath": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador3\\AnalizadorLexico\\AnalizadorLexico.csproj",
       "packagesPath": "C:\\Users\\jferm\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador\\AnalizadorLexico\\obj\\",
+      "outputPath": "C:\\Users\\jferm\\Source\\Repos\\Analizador-l-xico-de-un-compilador3\\AnalizadorLexico\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

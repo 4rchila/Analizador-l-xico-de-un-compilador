@@ -96,21 +96,20 @@ namespace AnalizadorLexico.Sintactico
             private bool CanStartDeclaration(Token t)
             {
                 if (t.Tipo == TokenType.Identificador) return true;
-                if (t.Tipo == TokenType.PalabraReservada || t.Tipo == TokenType.TipoDato)
+                if (t.Tipo == TokenType.PalabraReservada)
                 {
                     string[] starters =
                     {
-            "entero","decimal","booleano","cadena","caracter",
-            "Entero","Decimal","Booleano","Cadena","Caracter",
-            "funcion","si","sino","mientras","para","intentar",
-            "romper","continuar","devolver","imprimir","entrada",
-            "clase"
-        };
+                        "entero","decimal","booleano","cadena","caracter",
+                        "Entero","Decimal","Booleano","Cadena","Caracter",
+                        "funcion","si","sino","mientras","para","intentar",
+                        "romper","continuar","devolver","imprimir","entrada",
+                        "clase"
+                    };
                     return starters.Contains(t.Lexema);
                 }
                 return false;
             }
-
 
             private NodoSintactico ParseDeclaracion()
             {
@@ -134,13 +133,11 @@ namespace AnalizadorLexico.Sintactico
             {
                 string[] tipos =
                 {
-        "entero","decimal","booleano","cadena","caracter",
-        "Entero","Decimal","Booleano","Cadena","Caracter"
-    };
-                return (t.Tipo == TokenType.PalabraReservada || t.Tipo == TokenType.TipoDato)
-                       && tipos.Contains(t.Lexema);
+                    "entero","decimal","booleano","cadena","caracter",
+                    "Entero","Decimal","Booleano","Cadena","Caracter"
+                };
+                return t.Tipo == TokenType.PalabraReservada && tipos.Contains(t.Lexema);
             }
-
 
             private NodoSintactico ParseDeclaracionVariable()
             {
@@ -161,12 +158,9 @@ namespace AnalizadorLexico.Sintactico
                     ParseExpresion();
                 }
 
-                if (!MatchLexema(";"))
-                    Error("Falta ';' en declaración de variable");
-
+                if (!MatchLexema(";")) Error("Falta ';' en declaración de variable");
                 return nodo;
             }
-
 
             private void ParseTipo() => Advance();
 
@@ -208,37 +202,25 @@ namespace AnalizadorLexico.Sintactico
             {
                 var t = Peek();
 
-                // Expresión entre paréntesis
-                if (MatchLexema("("))
-                {
-                    ParseExpresion();
-                    MatchLexema(")");
-                    return;
-                }
+                if (MatchLexema("(")) { ParseExpresion(); MatchLexema(")"); return; }
 
-                // Llamada a función: identificador(...)
                 if (t.Tipo == TokenType.Identificador && Peek(1).Lexema == "(")
                 {
-                    Advance(); // identificador
-                    Advance(); // '('
+                    Advance();
+                    Advance();
                     ParseArgumentos();
                     MatchLexema(")");
                     return;
                 }
 
-                // Literales o identificadores simples
-                if (t.Tipo is TokenType.Identificador or TokenType.Entero or TokenType.Decimal or
-                    TokenType.Cadena or TokenType.Caracter or TokenType.Booleano)
+                if (t.Tipo is TokenType.Identificador or TokenType.Entero or TokenType.Decimal or TokenType.Cadena or TokenType.Booleano or TokenType.Caracter)
                 {
                     Advance();
                     return;
                 }
 
-                Error($"Expresión inválida");
-                Advance();
+                Error("Expresión inválida");
             }
-
-
             private void ParseArgumentos()
             {
                 if (Peek().Lexema == ")") return;
@@ -249,72 +231,17 @@ namespace AnalizadorLexico.Sintactico
             // ------------- CONTROL (if, while, etc) -------------
             private NodoSintactico ParseEstructuraControl()
             {
-                var nodo = new NodoSintactico("Estructura de Control");
-                var palabra = Advance(); // si, mientras, para, intentar
-
-                if (palabra.Lexema == "si")
-                {
-                    if (!MatchLexema("(")) Error("Se esperaba '(' después de 'si'");
-                    ParseExpresion();
-                    if (!MatchLexema(")")) Error("Se esperaba ')' después de la condición");
-                    if (!MatchLexema("{")) Error("Se esperaba '{' para abrir bloque");
-                    ParseDeclaraciones(nodo);
-                    if (!MatchLexema("}")) Error("Se esperaba '}' para cerrar bloque");
-
-                    if (MatchLexema("sino"))
-                    {
-                        if (!MatchLexema("{")) Error("Se esperaba '{' después de 'sino'");
-                        ParseDeclaraciones(nodo);
-                        if (!MatchLexema("}")) Error("Se esperaba '}' al cerrar 'sino'");
-                    }
-                }
-                else if (palabra.Lexema == "mientras")
-                {
-                    if (!MatchLexema("(")) Error("Se esperaba '(' después de 'mientras'");
-                    ParseExpresion();
-                    if (!MatchLexema(")")) Error("Se esperaba ')' después de la condición");
-                    if (!MatchLexema("{")) Error("Se esperaba '{' para abrir bloque");
-                    ParseDeclaraciones(nodo);
-                    if (!MatchLexema("}")) Error("Se esperaba '}' para cerrar bloque");
-                }
-                else
-                {
-                }
-
+                var nodo = new NodoSintactico("Control");
+                Advance();
                 return nodo;
             }
-
 
             private NodoSintactico ParseSentenciaControl()
             {
                 var nodo = new NodoSintactico("Sentencia Control");
-                var palabra = Advance(); 
-
-                switch (palabra.Lexema)
-                {
-                    case "imprimir":
-                    case "entrada":
-                        if (!MatchLexema("(")) Error($"Se esperaba '(' después de '{palabra.Lexema}'");
-                        if (palabra.Lexema == "imprimir") 
-                            ParseArgumentos();
-                        if (!MatchLexema(")")) Error("Se esperaba ')' al final de la sentencia");
-                        if (!MatchLexema(";")) Error("Falta ';' al final de la sentencia");
-                        break;
-
-                    case "devolver":
-                        ParseExpresion();
-                        if (!MatchLexema(";")) Error("Falta ';' después de 'devolver'");
-                        break;
-
-                    case "romper":
-                    case "continuar":
-                        if (!MatchLexema(";")) Error($"Falta ';' después de '{palabra.Lexema}'");
-                        break;
-                }
-
+                Advance();
                 return nodo;
             }
-
 
             // ------------- CLASES -------------
             private NodoSintactico ParseDeclaracionClase()
