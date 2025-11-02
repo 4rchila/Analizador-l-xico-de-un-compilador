@@ -5,12 +5,14 @@ namespace AnalizadorLexico.Lexico
 {
     public static class LenguajeDefinido
     {
-        // =============================
-        // PALABRAS RESERVADAS
-        // =============================
-        public static readonly List<string> PalabrasReservadas = new List<string>()
+        public static readonly List<string> TiposDatos = new List<string>()
         {
             "entero", "decimal", "booleano", "cadena", "caracter",
+            "Entero", "Decimal", "Booleano", "Cadena", "Caracter"
+        };
+
+        public static readonly List<string> PalabrasReservadas = new List<string>()
+        {
             "verdadero", "falso", "nulo",
             "si", "sino", "mientras", "hacer", "para", "romper", "continuar",
             "funcion", "devolver",
@@ -19,8 +21,6 @@ namespace AnalizadorLexico.Lexico
             "clase", "nuevo", "publico", "privado", "protegida", "estatica", "esto",
             "o", "y",
 
-            // Versiones con mayúscula inicial
-            "Entero", "Decimal", "Booleano", "Cadena", "Caracter",
             "Verdadero", "Falso", "Nulo",
             "Si", "Sino", "Mientras", "Hacer", "Para", "Romper", "Continuar",
             "Funcion", "Devolver",
@@ -30,25 +30,16 @@ namespace AnalizadorLexico.Lexico
             "O", "Y"
         };
 
-        // =============================
-        // OPERADORES
-        // =============================
         public static readonly List<string> Operadores = new List<string>()
         {
             "+", "-", "*", "/", "%", "=", "==", "!=", "<", ">", "<=", ">="
         };
 
-        // =============================
-        // SIGNOS
-        // =============================
         public static readonly List<string> Signos = new List<string>()
         {
             "(", ")", "{", "}", ",", ";", "\"", "'", "."
         };
 
-        // =============================
-        // EXPRESIONES REGULARES
-        // =============================
         public static readonly Regex NumeroEntero = new Regex(@"^\d+$");
         public static readonly Regex NumeroDecimal = new Regex(@"^\d+\.\d+$");
         public static readonly Regex Identificador = new Regex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
@@ -57,5 +48,6 @@ namespace AnalizadorLexico.Lexico
         public static readonly Regex Booleano = new Regex(@"^(verdadero|falso)$");
     }
 }
+
 
 

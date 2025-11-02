@@ -1,4 +1,3 @@
-
 public enum TokenType
 {
     PalabraReservada,
@@ -11,5 +10,6 @@ public enum TokenType
     Caracter,
     Error,
     OperadorAsignacion,
-    Booleano
+    Booleano,
+    TipoDato   // <-- AGREGADO
 }

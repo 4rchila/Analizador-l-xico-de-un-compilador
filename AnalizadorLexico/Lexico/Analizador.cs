@@ -14,7 +14,6 @@ namespace AnalizadorLexico.Lexico
             for (int i = 0; i < lineas.Length; i++)
             {
                 string linea = lineas[i];
-
                 List<string> lexemas = PreprocesarLinea(linea);
 
                 int columna = 1;
@@ -40,7 +39,6 @@ namespace AnalizadorLexico.Lexico
             {
                 char c = linea[i];
 
-                // Detectar operadores de asignación ('=')
                 if (c == '=' && !enCadena && !enCaracter)
                 { 
                     if (!string.IsNullOrEmpty(actual))
@@ -51,7 +49,6 @@ namespace AnalizadorLexico.Lexico
                     resultado.Add(c.ToString());
                     continue;
                 }
-
 
                 if (c == '"' && !enCaracter)
                 {
@@ -136,6 +133,9 @@ namespace AnalizadorLexico.Lexico
         private TokenType ClasificarToken(string token)
         {
             token = token.Trim();
+
+            if (LenguajeDefinido.TiposDatos.Contains(token))
+                return TokenType.TipoDato;
 
             if (LenguajeDefinido.PalabrasReservadas.Contains(token))
                 return TokenType.PalabraReservada;
